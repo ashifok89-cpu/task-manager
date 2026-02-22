@@ -663,7 +663,7 @@
 // ====================================================
 // CONFIGURATION — Paste your Google Apps Script URL here
 // ====================================================
-const API_URL = https://script.google.com/macros/s/AKfycbxB-zS7zTEct5T5chZ92u5tv3VbfyOMGkuEgBPYSzOAwlRN5ISVvMbwj39Xql1RZuKL/exec;
+const API_URL = 'https://script.google.com/macros/s/AKfycbxB-zS7zTEct5T5chZ92u5tv3VbfyOMGkuEgBPYSzOAwlRN5ISVvMbwj39Xql1RZuKL/exec';
 
 // ---- State ----
 let currentUser = null;
@@ -692,9 +692,9 @@ function doLogin() {
         showLoginError(res.error || 'Login failed');
       }
     })
-    .catch(() => {
+    .catch(err => {
       hideLoader();
-      showLoginError('Connection error. Check your API URL.');
+      showLoginError('Connection error: ' + err.message + '. Check API URL & deployment.');
     });
 }
 
@@ -921,10 +921,24 @@ function setFilter(filter, btn) {
 
 // ---- API Helper ----
 function apiCall(params) {
-  const url = new URL(API_URL);
-  Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
-  return fetch(url.toString())
-    .then(r => r.json());
+  const query = Object.keys(params)
+    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+    .join('&');
+  const url = API_URL + '?' + query;
+
+  return fetch(url, { redirect: 'follow', mode: 'cors' })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(text => {
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error('Response was not JSON:', text.substring(0, 200));
+        throw new Error('Invalid response from server');
+      }
+    });
 }
 
 // ---- UI Helpers ----
