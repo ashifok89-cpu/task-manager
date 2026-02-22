@@ -822,8 +822,9 @@ function doEditTask() {
   const assignedTo = document.getElementById('editAssign').value;
   if (!ref) { toast('Reference is required', true); return; }
   if (!assignedTo) { toast('Please assign to a user', true); return; }
+  const rowToEdit = editingRow;
   showLoader(); closeEditModal();
-  apiCall({ action: 'updateTask', row: editingRow, reference: ref, type, regnos, note, assignedTo })
+  apiCall({ action: 'updateTask', row: rowToEdit, reference: ref, type, regnos, note, assignedTo })
     .then(res => { hideLoader(); if (res.success) { toast('Task updated'); loadTasks(); } else toast(res.error || 'Update failed', true); })
     .catch(err => { hideLoader(); toast('Error: ' + err.message, true); });
 }
