@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #232734;
+    --border: #2e3346;
+    --text: #e4e6f0;
+    --text-dim: #8b90a5;
+    --accent: #6c8cff;
+    --accent-glow: rgba(108, 140, 255, 0.15);
+    --pending: #f0a030;
+    --pending-bg: rgba(240, 160, 48, 0.1);
+    --pending-border: rgba(240, 160, 48, 0.3);
+    --tocheck: #6c8cff;
+    --tocheck-bg: rgba(108, 140, 255, 0.1);
+    --tocheck-border: rgba(108, 140, 255, 0.3);
+    --completed: #34d399;
+    --completed-bg: rgba(52, 211, 153, 0.1);
+    --completed-border: rgba(52, 211, 153, 0.3);
+    --danger: #f06060;
+    --danger-bg: rgba(240, 96, 96, 0.1);
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ---- Scrollbar ---- */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ---- Login Screen ---- */
+  #loginScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(108,140,255,0.06) 0%, transparent 60%);
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--shadow);
+  }
+
+  .login-card h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+
+  .login-card p {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #5a7af0; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .btn-outline:hover { border-color: var(--text-dim); color: var(--text); }
+
+  .btn-danger {
+    background: var(--danger-bg);
+    border: 1px solid rgba(240,96,96,0.2);
+    color: var(--danger);
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  .btn-danger:hover { background: rgba(240,96,96,0.2); }
+
+  .btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+
+  .login-error {
+    color: var(--danger);
+    font-size: 13px;
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  /* ---- App Screen ---- */
+  #appScreen { display: none; }
+
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .app-header .brand {
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+  }
+
+  .app-header .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .role-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .role-badge.admin { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(108,140,255,0.2); }
+  .role-badge.user { background: rgba(52,211,153,0.1); color: var(--completed); border: 1px solid rgba(52,211,153,0.2); }
+
+  .logout-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .logout-btn:hover { color: var(--danger); }
+
+  .app-body {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 24px 20px 100px;
+  }
+
+  /* ---- Toolbar ---- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar .filter-group {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .spacer { flex: 1; }
+
+  .task-count {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* ---- Task Cards ---- */
+  .task-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.3s ease;
+  }
+  .task-card:hover { border-color: #3e4460; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-card .status-ribbon {
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+  }
+  .task-card.status-pending .status-ribbon { background: var(--pending); }
+  .task-card.status-tocheck .status-ribbon { background: var(--tocheck); }
+  .task-card.status-completed .status-ribbon { background: var(--completed); }
+
+  .task-row-1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .task-ref {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.2px;
+  }
+
+  .task-type-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .type-renewal { background: rgba(108,140,255,0.1); color: #8da8ff; border: 1px solid rgba(108,140,255,0.15); }
+  .type-update { background: rgba(240,160,48,0.1); color: #f0a030; border: 1px solid rgba(240,160,48,0.15); }
+  .type-recordal { background: rgba(168,120,255,0.1); color: #b090ff; border: 1px solid rgba(168,120,255,0.15); }
+  .type-other { background: rgba(140,140,160,0.1); color: #9999aa; border: 1px solid rgba(140,140,160,0.15); }
+
+  .task-regnos {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+  .task-regnos:empty { display: none; }
+
+  .task-note {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+  .task-note:empty { display: none; }
+
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .status-btn {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    background: var(--surface-2);
+    color: var(--text-dim);
+  }
+  .status-btn:hover { color: var(--text); }
+
+  .status-btn.active-pending {
+    background: var(--pending-bg);
+    color: var(--pending);
+    border-color: var(--pending-border);
+  }
+  .status-btn.active-tocheck {
+    background: var(--tocheck-bg);
+    color: var(--tocheck);
+    border-color: var(--tocheck-border);
+  }
+  .status-btn.active-completed {
+    background: var(--completed-bg);
+    color: var(--completed);
+    border-color: var(--completed-border);
+  }
+
+  .task-meta {
+    font-size: 11px;
+    color: #555a70;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* ---- Add Task Modal ---- */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    letter-spacing: -0.3px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .modal-actions .btn { flex: 1; }
+
+  /* ---- FAB ---- */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(108,140,255,0.4);
+    transition: all 0.2s;
+    z-index: 50;
+    display: none;
+  }
+  .fab:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(108,140,255,0.5); }
+
+  /* ---- Empty State ---- */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 15px; }
+
+  /* ---- Loading ---- */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,17,23,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+  }
+  .loading-overlay.active { display: flex; }
+  .loading-overlay .spinner { width: 32px; height: 32px; border-width: 3px; }
+
+  /* ---- Toast ---- */
+  .toast-container {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toast {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+  }
+  .toast.success { border-color: var(--completed-border); }
+  .toast.error { border-color: rgba(240,96,96,0.3); color: var(--danger); }
+
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastOut { to { opacity: 0; transform: translateY(-10px); } }
+
+  /* ---- Confirm Dialog ---- */
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 250;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .confirm-overlay.open { display: flex; }
+
+  .confirm-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .confirm-box p { margin-bottom: 20px; font-size: 15px; }
+  .confirm-box .modal-actions { justify-content: center; }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 500px) {
+    .app-header { padding: 12px 16px; }
+    .app-body { padding: 16px 14px 100px; }
+    .task-card { padding: 14px 14px 14px 18px; }
+    .toolbar { gap: 8px; }
+    .modal { padding: 22px; }
+    .login-card { padding: 30px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>Task Manager</h1>
+    <p>Sign in to continue</p>
+    <div id="loginError" class="login-error"></div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" autocomplete="username" autofocus>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- ========== APP SCREEN ========== -->
+<div id="appScreen">
+
+  <header class="app-header">
+    <span class="brand">📋 Task Manager</span>
+    <div class="user-info">
+      <span id="userDisplay"></span>
+      <span class="role-badge" id="roleBadge"></span>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="app-body">
+    <div class="toolbar">
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" data-filter="Pending" onclick="setFilter('Pending', this)">Pending</button>
+        <button class="filter-btn" data-filter="To Check" onclick="setFilter('To Check', this)">To Check</button>
+        <button class="filter-btn" data-filter="Completed" onclick="setFilter('Completed', this)">Done</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="task-count" id="taskCount"></span>
+    </div>
+
+    <div class="task-list" id="taskList"></div>
+  </main>
+
+  <!-- FAB (Admin only) -->
+  <button class="fab" id="fabBtn" onclick="openAddModal()">+</button>
+</div>
+
+<!-- ========== ADD TASK MODAL ========== -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>Add New Task</h2>
+    <div class="form-group">
+      <label>Reference</label>
+      <input type="text" id="inputRef" placeholder="e.g. TR70681SA">
+    </div>
+    <div class="form-group">
+      <label>Type</label>
+      <select id="inputType">
+        <option value="Renewal Certi to Send">Renewal Certi to Send</option>
+        <option value="Update Records">Update Records</option>
+        <option value="Recordal Certi to Send">Recordal Certi to Send</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Reg Nos.</label>
+      <input type="text" id="inputRegNos" placeholder="e.g. 1436024892, 1436024891">
+    </div>
+    <div class="form-group">
+      <label>Note</label>
+      <textarea id="inputNote" placeholder="Optional note..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doAddTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== CONFIRM DIALOG ========== -->
+<div class="confirm-overlay" id="confirmDialog">
+  <div class="confirm-box">
+    <p id="confirmMsg">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk" onclick="confirmAction()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== LOADING ========== -->
+<div class="loading-overlay" id="loader">
+  <div class="spinner"></div>
+</div>
+
+<!-- ========== TOAST ========== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ====================================================
+// CONFIGURATION — Paste your Google Apps Script URL here
+// ====================================================
+const API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+// ---- State ----
+let currentUser = null;
+let currentRole = null;
+let allTasks = [];
+let currentFilter = 'all';
+let pendingConfirmFn = null;
+
+// ---- Login / Logout ----
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  if (!user || !pass) return showLoginError('Please enter username and password');
+
+  showLoader();
+  apiCall({ action: 'login', username: user, password: pass })
+    .then(res => {
+      hideLoader();
+      if (res.success) {
+        currentUser = res.username;
+        currentRole = res.role;
+        sessionStorage.setItem('tm_user', currentUser);
+        sessionStorage.setItem('tm_role', currentRole);
+        showApp();
+      } else {
+        showLoginError(res.error || 'Login failed');
+      }
+    })
+    .catch(() => {
+      hideLoader();
+      showLoginError('Connection error. Check your API URL.');
+    });
+}
+
+function doLogout() {
+  sessionStorage.removeItem('tm_user');
+  sessionStorage.removeItem('tm_role');
+  currentUser = null;
+  currentRole = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ---- Auto-login from session ----
+(function checkSession() {
+  const u = sessionStorage.getItem('tm_user');
+  const r = sessionStorage.getItem('tm_role');
+  if (u && r) {
+    currentUser = u;
+    currentRole = r;
+    showApp();
+  }
+})();
+
+// ---- Enter key for login ----
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('loginUser').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginPass').focus();
+});
+
+// ---- Show App ----
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userDisplay').textContent = currentUser;
+
+  const badge = document.getElementById('roleBadge');
+  badge.textContent = currentRole;
+  badge.className = 'role-badge ' + currentRole;
+
+  if (currentRole === 'admin') {
+    document.getElementById('fabBtn').style.display = 'block';
+  } else {
+    document.getElementById('fabBtn').style.display = 'none';
+  }
+
+  loadTasks();
+}
+
+// ---- Tasks ----
+function loadTasks() {
+  showLoader();
+  apiCall({ action: 'getTasks' })
+    .then(res => {
+      hideLoader();
+      if (res.success) {
+        allTasks = res.tasks;
+        renderTasks();
+      } else {
+        toast('Failed to load tasks', 'error');
+      }
+    })
+    .catch(() => {
+      hideLoader();
+      toast('Connection error', 'error');
+    });
+}
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  let tasks = allTasks;
+
+  if (currentFilter !== 'all') {
+    tasks = tasks.filter(t => t.status === currentFilter);
+  }
+
+  document.getElementById('taskCount').textContent = tasks.length + ' task' + (tasks.length !== 1 ? 's' : '');
+
+  if (tasks.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No tasks found</p></div>`;
+    return;
+  }
+
+  list.innerHTML = tasks.map(t => {
+    const statusClass = t.status === 'Pending' ? 'status-pending'
+      : t.status === 'To Check' ? 'status-tocheck'
+      : 'status-completed';
+
+    const typeClass = t.type.includes('Renewal') ? 'type-renewal'
+      : t.type.includes('Update') ? 'type-update'
+      : t.type.includes('Recordal') ? 'type-recordal'
+      : 'type-other';
+
+    const date = t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '';
+
+    return `
+      <div class="task-card ${statusClass}">
+        <div class="status-ribbon"></div>
+        <div class="task-row-1">
+          <span class="task-ref">${esc(t.reference)}</span>
+          <span class="task-type-badge ${typeClass}">${esc(t.type)}</span>
+        </div>
+        <div class="task-regnos">${esc(t.regnos)}</div>
+        <div class="task-note">${esc(t.note)}</div>
+        <div class="task-actions">
+          <button class="status-btn ${t.status === 'Pending' ? 'active-pending' : ''}" onclick="changeStatus(${t.row}, 'Pending')">Pending</button>
+          <button class="status-btn ${t.status === 'To Check' ? 'active-tocheck' : ''}" onclick="changeStatus(${t.row}, 'To Check')">To Check</button>
+          <button class="status-btn ${t.status === 'Completed' ? 'active-completed' : ''}" onclick="changeStatus(${t.row}, 'Completed')">Completed</button>
+          ${currentRole === 'admin' ? `<span class="spacer"></span><button class="btn btn-danger btn-sm" onclick="confirmDelete(${t.row})">Delete</button>` : ''}
+          <span class="task-meta">${date}${t.createdBy ? ' · ' + esc(t.createdBy) : ''}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function changeStatus(row, status) {
+  showLoader();
+  apiCall({ action: 'updateStatus', row: row, status: status })
+    .then(res => {
+      hideLoader();
+      if (res.success) {
+        const t = allTasks.find(x => x.row === row);
+        if (t) t.status = status;
+        renderTasks();
+        toast('Status updated');
+      } else {
+        toast('Failed to update', 'error');
+      }
+    })
+    .catch(() => { hideLoader(); toast('Connection error', 'error'); });
+}
+
+// ---- Delete ----
+function confirmDelete(row) {
+  document.getElementById('confirmMsg').textContent = 'Delete this task? This cannot be undone.';
+  document.getElementById('confirmDialog').classList.add('open');
+  pendingConfirmFn = () => doDelete(row);
+}
+
+function doDelete(row) {
+  showLoader();
+  apiCall({ action: 'deleteTask', row: row })
+    .then(res => {
+      hideLoader();
+      if (res.success) {
+        toast('Task deleted');
+        loadTasks(); // reload because row numbers shift
+      } else {
+        toast('Failed to delete', 'error');
+      }
+    })
+    .catch(() => { hideLoader(); toast('Connection error', 'error'); });
+}
+
+function confirmAction() {
+  closeConfirm();
+  if (pendingConfirmFn) pendingConfirmFn();
+  pendingConfirmFn = null;
+}
+
+function closeConfirm() {
+  document.getElementById('confirmDialog').classList.remove('open');
+}
+
+// ---- Add Task ----
+function openAddModal() {
+  document.getElementById('inputRef').value = '';
+  document.getElementById('inputType').value = 'Renewal Certi to Send';
+  document.getElementById('inputRegNos').value = '';
+  document.getElementById('inputNote').value = '';
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(() => document.getElementById('inputRef').focus(), 100);
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+function doAddTask() {
+  const ref = document.getElementById('inputRef').value.trim();
+  const type = document.getElementById('inputType').value;
+  const regnos = document.getElementById('inputRegNos').value.trim();
+  const note = document.getElementById('inputNote').value.trim();
+
+  if (!ref) {
+    toast('Reference is required', 'error');
+    return;
+  }
+
+  showLoader();
+  closeAddModal();
+
+  apiCall({ action: 'addTask', reference: ref, type: type, regnos: regnos, note: note, createdBy: currentUser })
+    .then(res => {
+      hideLoader();
+      if (res.success) {
+        toast('Task added');
+        loadTasks();
+      } else {
+        toast('Failed to add task', 'error');
+      }
+    })
+    .catch(() => { hideLoader(); toast('Connection error', 'error'); });
+}
+
+// ---- Filter ----
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTasks();
+}
+
+// ---- API Helper ----
+function apiCall(params) {
+  const url = new URL(API_URL);
+  Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+  return fetch(url.toString())
+    .then(r => r.json());
+}
+
+// ---- UI Helpers ----
+function showLoader() { document.getElementById('loader').classList.add('active'); }
+function hideLoader() { document.getElementById('loader').classList.remove('active'); }
+
+function toast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function esc(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+
+</body>
+</html>
