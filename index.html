@@ -592,8 +592,8 @@ function doLogin() {
       hideLoader();
       if (res.success) {
         currentUser = res.username; currentRole = res.role;
-        sessionStorage.setItem('tm_user', currentUser);
-        sessionStorage.setItem('tm_role', currentRole);
+        localStorage.setItem('tm_user', currentUser);
+        localStorage.setItem('tm_role', currentRole);
         showApp();
       } else showLoginError(res.error || 'Invalid credentials');
     })
@@ -601,7 +601,7 @@ function doLogin() {
 }
 
 function doLogout() {
-  sessionStorage.removeItem('tm_user'); sessionStorage.removeItem('tm_role');
+  localStorage.removeItem('tm_user'); localStorage.removeItem('tm_role');
   currentUser = null; currentRole = null;
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appScreen').style.display = 'none';
@@ -616,7 +616,7 @@ function showLoginError(msg) {
 
 // Auto-login
 (function() {
-  const u = sessionStorage.getItem('tm_user'), r = sessionStorage.getItem('tm_role');
+  const u = localStorage.getItem('tm_user'), r = localStorage.getItem('tm_role');
   if (u && r) { currentUser = u; currentRole = r; showApp(); }
 })();
 
@@ -824,8 +824,8 @@ function doEditTask() {
   if (!assignedTo) { toast('Please assign to a user', true); return; }
   showLoader(); closeEditModal();
   apiCall({ action: 'updateTask', row: editingRow, reference: ref, type, regnos, note, assignedTo })
-    .then(res => { hideLoader(); if (res.success) { toast('Task updated'); loadTasks(); } else toast('Update failed', true); })
-    .catch(() => { hideLoader(); toast('Connection error', true); });
+    .then(res => { hideLoader(); if (res.success) { toast('Task updated'); loadTasks(); } else toast(res.error || 'Update failed', true); })
+    .catch(err => { hideLoader(); toast('Error: ' + err.message, true); });
 }
 
 // Filter
