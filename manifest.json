@@ -1,7 +1,7 @@
 {
-  "name": "Task Manager",
-  "short_name": "Tasks",
-  "description": "Task assignment and tracking",
+  "name": "KIP Tasks",
+  "short_name": "KIP Tasks",
+  "description": "KIP task assignment and tracking",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f6f9",
