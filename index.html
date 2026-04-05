@@ -238,6 +238,9 @@
   .pill-update { background: var(--pending-bg); color: var(--pending-color); border: 1px solid var(--pending-border); }
   .pill-recordal { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
   .pill-other { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+  .pill-normal { background: var(--tocheck-bg); color: var(--tocheck-color); border: 1px solid var(--tocheck-border); }
+  .pill-urgent { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .pill-low { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
 
   .assigned-chip {
     display: inline-flex; align-items: center; gap: 4px;
@@ -643,7 +646,7 @@ function loadTypes() {
 }
 
 function populateTypeDropdowns(selectedValue) {
-  const opts = typesList.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  const opts = typesList.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
   ['inputType', 'editType'].forEach(id => {
     const sel = document.getElementById(id);
     sel.innerHTML = opts || '<option value="">No types available</option>';
@@ -717,7 +720,9 @@ function renderTasks() {
 
   list.innerHTML = tasks.map(t => {
     const sc = t.status === 'Pending' ? 'st-pending' : t.status === 'To Check' ? 'st-tocheck' : 'st-completed';
-    const tc = t.type.includes('Renewal') ? 'pill-renewal' : t.type.includes('Recordal') ? 'pill-recordal' : t.type.includes('Update') ? 'pill-update' : 'pill-other';
+    const typeObj = typesList.find(x => x.name === t.type);
+    const priority = typeObj ? (typeObj.priority || 'Normal').toLowerCase() : 'normal';
+    const tc = priority === 'urgent' ? 'pill-urgent' : priority === 'low' ? 'pill-low' : 'pill-normal';
     const d = t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '';
     const assignedChip = t.assignedTo ? `<span class="assigned-chip"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${esc(t.assignedTo)}</span>` : '';
 
@@ -780,7 +785,7 @@ function closeConfirm() { document.getElementById('confirmDialog').classList.rem
 // Add Task
 function openAddModal() {
   document.getElementById('inputRef').value = '';
-  if (typesList.length) document.getElementById('inputType').value = typesList[0];
+  if (typesList.length) document.getElementById('inputType').value = typesList[0].name;
   document.getElementById('inputRegNos').value = '';
   document.getElementById('inputNote').value = '';
   document.getElementById('inputAssign').value = 'Hazra';
